@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "fityo-connect"
+rootProject.name = "tread-sync"
 include(":app")
