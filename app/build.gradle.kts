@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "app.fityoconnect"
+    namespace = "app.treadsync"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.fityoconnect"
+        applicationId = "app.treadsync"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
