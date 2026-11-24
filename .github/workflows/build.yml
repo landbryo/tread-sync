@@ -11,7 +11,14 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Releases from main are versioned by run number. The offset keeps them above locally built
+  # APKs (versionCode 1) so Android accepts them as updates.
+  VERSION_CODE: ${{ github.run_number }}00
+  VERSION_NAME: 0.1.${{ github.run_number }}
+  IS_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
 jobs:
   build:
@@ -27,22 +34,49 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Optional: sign with your own debug keystore so CI builds install over the app you
-      # already have. Without the secret, the runner generates a new debug key and the APK
-      # must be installed fresh (uninstalling the existing app first).
+      # Sign with your own debug keystore so CI builds install over the app you already have.
+      # Without it the runner generates a new key on every run, so releases require it.
       - name: Restore debug keystore
         env:
           DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
-        if: env.DEBUG_KEYSTORE_BASE64 != ''
         run: |
-          mkdir -p ~/.android
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > ~/.android/debug.keystore
+          if [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
+            mkdir -p ~/.android
+            echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > ~/.android/debug.keystore
+          elif [ "$IS_RELEASE" = "true" ]; then
+            echo "::error::Set the DEBUG_KEYSTORE_BASE64 secret (see README) so releases can update the installed app."
+            exit 1
+          else
+            echo "::notice::DEBUG_KEYSTORE_BASE64 is not set; this APK is signed with a throwaway key."
+          fi
 
       - name: Test and build
-        run: ./gradlew testDebugUnitTest assembleDebug
+        run: ./gradlew testDebugUnitTest assembleDebug -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
 
       - uses: actions/upload-artifact@v4
         with:
           name: tread-sync
           path: app/build/outputs/apk/debug/tread-sync.apk
           if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tread-sync
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION_NAME" tread-sync.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Tread Sync $VERSION_NAME" \
+            --generate-notes \
+            --latest

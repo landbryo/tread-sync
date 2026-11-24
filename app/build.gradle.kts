@@ -12,8 +12,9 @@ android {
         applicationId = "app.treadsync"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI release builds pass -PversionCode and -PversionName so each release can update the last.
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
+        versionName = (findProperty("versionName") as String?) ?: "0.1.0"
     }
 
     buildTypes {
