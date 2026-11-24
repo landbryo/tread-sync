@@ -37,6 +37,14 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    // Name the APK tread-sync.apk instead of app-<buildType>.apk. Each build type still
+    // writes to its own folder under build/outputs/apk/.
+    applicationVariants.all {
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName = "tread-sync.apk"
+        }
+    }
 }
 
 dependencies {

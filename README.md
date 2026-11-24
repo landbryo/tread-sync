@@ -53,10 +53,20 @@ Run the unit tests and build the APK:
 Install on a phone connected by USB (or wireless debugging) with developer options enabled:
 
 ```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/debug/tread-sync.apk
 ```
 
-Or copy `app/build/outputs/apk/debug/app-debug.apk` to the phone and open it (allow installing from unknown sources).
+Or copy `app/build/outputs/apk/debug/tread-sync.apk` to the phone and open it (allow installing from unknown sources).
+
+### GitHub Actions
+
+Every push to `main`, every pull request, and a manual run (Actions tab, **Build APK**, **Run workflow**) runs the unit tests and builds the debug APK. Download it from the run's **Artifacts** section: `tread-sync` is a zip containing `tread-sync.apk`.
+
+By default the runner signs with a new debug key, so Android will not install a CI build over a copy you built yourself (uninstalling first deletes saved workouts and the Strava connection). To sign CI builds with your own debug key, add it as a repository secret:
+
+```bash
+base64 -w0 ~/.android/debug.keystore | gh secret set DEBUG_KEYSTORE_BASE64 --repo landbryo/tread-sync
+```
 
 ## If the treadmill is not FTMS
 
