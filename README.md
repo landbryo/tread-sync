@@ -53,10 +53,26 @@ Run the unit tests and build the APK:
 Install on a phone connected by USB (or wireless debugging) with developer options enabled:
 
 ```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/debug/tread-sync.apk
 ```
 
-Or copy `app/build/outputs/apk/debug/app-debug.apk` to the phone and open it (allow installing from unknown sources).
+Or copy `app/build/outputs/apk/debug/tread-sync.apk` to the phone and open it (allow installing from unknown sources).
+
+### Releases
+
+Every merge to `main` runs the unit tests, builds the APK and publishes it as a GitHub Release, versioned by the workflow's run number (for example `v0.1.12`). This link always downloads the newest one, so it's handy to bookmark on the phone:
+
+https://github.com/landbryo/tread-sync/releases/latest/download/tread-sync.apk
+
+Pull requests and manual runs (Actions tab, **Build APK**, **Run workflow**) build the APK too, but only attach it to the run as the `tread-sync` artifact (a zip containing `tread-sync.apk`).
+
+Android only installs an update signed with the same key as the installed app, and uninstalling first deletes saved workouts and the Strava connection. So CI signs with your own debug key, stored as a repository secret. Add it once:
+
+```bash
+base64 -w0 ~/.android/debug.keystore | gh secret set DEBUG_KEYSTORE_BASE64 --repo landbryo/tread-sync
+```
+
+Builds on `main` fail without the secret rather than publish a release that can't update the app. Release builds use version codes of 100 and up, so they install over APKs built locally (version code 1).
 
 ## If the treadmill is not FTMS
 
